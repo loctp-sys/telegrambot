@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { readScheduleData, addScheduledPost, type ScheduledPost } from '@/lib/google';
-import { notifyScheduledPost } from '@/lib/telegram';
+import { notifyScheduledPost, sendTestMessage } from '@/lib/telegram';
 import { SHEET_NAMES } from '@/config/constants';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ExternalLink, Image } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image, Eye } from 'lucide-react';
+import TelegramPreviewModal from '@/components/TelegramPreviewModal';
 
 export default function Scheduler() {
     const [posts, setPosts] = useState<ScheduledPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [previewPost, setPreviewPost] = useState<ScheduledPost | null>(null);
     const [formData, setFormData] = useState({
         date: '',
         time: '',
@@ -68,6 +70,14 @@ export default function Scheduler() {
         } catch (error) {
             console.error('Error adding post:', error);
         }
+    };
+
+    const handleSendTest = async (post: ScheduledPost) => {
+        await sendTestMessage({
+            content: post.content,
+            imageLink: post.imageLink,
+            buttonLink: post.buttonLink,
+        });
     };
 
     if (loading) {
@@ -202,13 +212,14 @@ export default function Scheduler() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Link</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ảnh</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Preview</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {posts.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
+                                    <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">
                                         Chưa có bài viết nào được lên lịch. Nhấn "Thêm lịch" để bắt đầu.
                                     </td>
                                 </tr>
@@ -251,6 +262,16 @@ export default function Scheduler() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setPreviewPost(post)}
+                                                title="Xem trước"
+                                            >
+                                                <Eye className="h-4 w-4 text-blue-600" />
+                                            </Button>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <Button variant="ghost" size="sm">
                                                 <Trash2 className="h-4 w-4 text-red-600" />
                                             </Button>
@@ -262,6 +283,16 @@ export default function Scheduler() {
                     </table>
                 </div>
             </div>
+
+            {/* Preview Modal */}
+            <TelegramPreviewModal
+                isOpen={previewPost !== null}
+                onClose={() => setPreviewPost(null)}
+                content={previewPost?.content || ''}
+                imageLink={previewPost?.imageLink}
+                buttonLink={previewPost?.buttonLink}
+                onSendTest={previewPost ? () => handleSendTest(previewPost) : undefined}
+            />
         </div>
     );
 }
