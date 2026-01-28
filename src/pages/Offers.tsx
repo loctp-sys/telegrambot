@@ -24,6 +24,14 @@ export default function Offers() {
     const loadOffers = async () => {
         try {
             setLoading(true);
+
+            // Check if user is signed in
+            if (!(window as any).gapi?.client?.getToken()) {
+                console.log('⚠️ User not signed in, skipping data fetch');
+                setLoading(false);
+                return;
+            }
+
             const data = await readLoansData(SHEET_NAMES.LOANS);
             setOffers(data);
         } catch (error) {
@@ -178,8 +186,8 @@ export default function Offers() {
                                         <td className="px-6 py-4 text-sm font-medium">{offer.name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${offer.type === 'WEB' ? 'bg-blue-100 text-blue-800' :
-                                                    offer.type === 'H5' ? 'bg-purple-100 text-purple-800' :
-                                                        'bg-green-100 text-green-800'
+                                                offer.type === 'H5' ? 'bg-purple-100 text-purple-800' :
+                                                    'bg-green-100 text-green-800'
                                                 }`}>
                                                 {offer.type}
                                             </span>

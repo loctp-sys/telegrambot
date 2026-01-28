@@ -26,6 +26,14 @@ export default function Scheduler() {
     const loadPosts = async () => {
         try {
             setLoading(true);
+
+            // Check if user is signed in
+            if (!(window as any).gapi?.client?.getToken()) {
+                console.log('⚠️ User not signed in, skipping data fetch');
+                setLoading(false);
+                return;
+            }
+
             const data = await readScheduleData(SHEET_NAMES.SCHEDULE);
             setPosts(data);
         } catch (error) {

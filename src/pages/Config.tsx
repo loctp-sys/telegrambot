@@ -18,6 +18,14 @@ export default function Config() {
     const loadConfigs = async () => {
         try {
             setLoading(true);
+
+            // Check if user is signed in
+            if (!(window as any).gapi?.client?.getToken()) {
+                console.log('⚠️ User not signed in, skipping data fetch');
+                setLoading(false);
+                return;
+            }
+
             const data = await readConfigData(SHEET_NAMES.CONFIG);
             setConfigs(data);
         } catch (error) {

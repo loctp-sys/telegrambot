@@ -27,6 +27,13 @@ export default function Dashboard() {
         try {
             setLoading(true);
 
+            // Check if user is signed in
+            if (!(window as any).gapi?.client?.getToken()) {
+                console.log('⚠️ User not signed in, skipping data fetch');
+                setLoading(false);
+                return;
+            }
+
             // Load loans data
             const loansData = await readLoansData(SHEET_NAMES.LOANS);
             const activeLoans = loansData.filter(loan => loan.status === 'Active').length;
