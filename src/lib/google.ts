@@ -199,6 +199,11 @@ export const readLoansData = async (sheetName: string): Promise<LoanOffer[]> => 
     try {
         const data = await readSheet(`${sheetName}!A:F`);
 
+        console.log('📊 Raw data from Google Sheets:', data);
+        console.log('📊 Data length:', data.length);
+        console.log('📊 First row:', data[0]);
+        console.log('📊 Second row:', data[1]);
+
         if (data.length <= 1) return []; // No data or only header
 
         // Skip header row (index 0), map from row 2 onwards
