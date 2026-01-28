@@ -13,11 +13,11 @@ export const TELEGRAM_CONFIG = {
     chatId: import.meta.env.VITE_TELEGRAM_CHAT_ID || '',
 };
 
-// Sheet Names
+// Sheet Names (Actual Google Sheet names)
 export const SHEET_NAMES = {
-    OFFERS: 'Offers',
-    SCHEDULE: 'Schedule',
-    ANALYTICS: 'Analytics',
+    LOANS: 'DATA_KHOANVAY',      // Loan offers data
+    SCHEDULE: 'AUTO_POST',        // Scheduled posts
+    CONFIG: 'CONFIG',             // Bot configuration
 };
 
 // App Configuration

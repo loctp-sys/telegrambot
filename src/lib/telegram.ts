@@ -35,21 +35,23 @@ export const sendTelegramMessage = async (message: string): Promise<boolean> => 
 };
 
 /**
- * Format and send notification about new offer
+ * Format and send notification about new loan offer
  */
 export const notifyNewOffer = async (offerData: {
     name: string;
-    amount: string;
-    interest: string;
-    term: string;
+    type: string;
+    affLink: string;
+    status: string;
+    description: string;
 }): Promise<boolean> => {
     const message = `
 🆕 <b>Kho vay mới được thêm</b>
 
 📋 Tên: ${offerData.name}
-💰 Số tiền: ${offerData.amount}
-📊 Lãi suất: ${offerData.interest}
-⏰ Kỳ hạn: ${offerData.term}
+🏷️ Loại: ${offerData.type}
+🔗 Link Aff: ${offerData.affLink}
+✅ Trạng thái: ${offerData.status}
+📝 Mô tả: ${offerData.description}
 
 Thời gian: ${new Date().toLocaleString('vi-VN')}
   `.trim();

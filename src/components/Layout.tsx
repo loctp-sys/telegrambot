@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import LoginBtn from './LoginBtn';
-import { LayoutDashboard, Package, Calendar, Menu } from 'lucide-react';
+import { LayoutDashboard, Package, Calendar, Settings, Menu } from 'lucide-react';
 import { useState } from 'react';
 
 interface LayoutProps {
@@ -13,6 +13,7 @@ const menuItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/offers', label: 'Kho vay', icon: Package },
     { path: '/scheduler', label: 'Lên lịch', icon: Calendar },
+    { path: '/config', label: 'Cấu hình', icon: Settings },
 ];
 
 export default function Layout({ children }: LayoutProps) {

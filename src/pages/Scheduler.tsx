@@ -1,9 +1,77 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { readScheduleData, addScheduledPost, type ScheduledPost } from '@/lib/google';
+import { notifyScheduledPost } from '@/lib/telegram';
+import { SHEET_NAMES } from '@/config/constants';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image } from 'lucide-react';
 
 export default function Scheduler() {
+    const [posts, setPosts] = useState<ScheduledPost[]>([]);
+    const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({
+        date: '',
+        time: '',
+        content: '',
+        buttonLink: '',
+        imageLink: '',
+        status: 'Pending',
+        exactTime: '',
+    });
+
+    useEffect(() => {
+        loadPosts();
+    }, []);
+
+    const loadPosts = async () => {
+        try {
+            setLoading(true);
+            const data = await readScheduleData(SHEET_NAMES.SCHEDULE);
+            setPosts(data);
+        } catch (error) {
+            console.error('Error loading posts:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        try {
+            await addScheduledPost(SHEET_NAMES.SCHEDULE, formData);
+            await notifyScheduledPost({
+                title: formData.content.substring(0, 50) + '...',
+                platform: 'Telegram',
+                scheduledTime: `${formData.date} ${formData.time}`,
+            });
+
+            setFormData({
+                date: '',
+                time: '',
+                content: '',
+                buttonLink: '',
+                imageLink: '',
+                status: 'Pending',
+                exactTime: '',
+            });
+            setShowForm(false);
+            loadPosts();
+        } catch (error) {
+            console.error('Error adding post:', error);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-4 text-muted-foreground">Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -18,12 +86,173 @@ export default function Scheduler() {
                 </Button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Chức năng đang phát triển</h3>
-                <p className="text-muted-foreground">
-                    Tính năng lên lịch đăng bài sẽ sớm được cập nhật
-                </p>
+            {showForm && (
+                <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+                    <h2 className="text-xl font-bold mb-4">Lên lịch bài viết mới</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Ngày dự kiến *</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={formData.date}
+                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Giờ gửi *</label>
+                                <input
+                                    type="time"
+                                    required
+                                    value={formData.time}
+                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Nội dung Caption *</label>
+                            <textarea
+                                required
+                                value={formData.content}
+                                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                rows={4}
+                                placeholder="Nhập nội dung bài viết..."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Link nút bấm</label>
+                            <input
+                                type="url"
+                                value={formData.buttonLink}
+                                onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">Link ảnh</label>
+                            <input
+                                type="url"
+                                value={formData.imageLink}
+                                onChange={(e) => setFormData({ ...formData, imageLink: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Trạng thái *</label>
+                                <select
+                                    required
+                                    value={formData.status}
+                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                    <option value="Pending">Pending</option>
+                                    <option value="Done">Done</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Giờ đăng chính xác</label>
+                                <input
+                                    type="datetime-local"
+                                    value={formData.exactTime}
+                                    onChange={(e) => setFormData({ ...formData, exactTime: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button type="submit">Lưu</Button>
+                            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                                Hủy
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 border-b">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giờ</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nội dung</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Link</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ảnh</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {posts.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
+                                        Chưa có bài viết nào được lên lịch. Nhấn "Thêm lịch" để bắt đầu.
+                                    </td>
+                                </tr>
+                            ) : (
+                                posts.map((post, index) => (
+                                    <tr key={index} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{post.date}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{post.time}</td>
+                                        <td className="px-6 py-4 text-sm max-w-xs truncate" title={post.content}>
+                                            {post.content}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {post.buttonLink ? (
+                                                <a
+                                                    href={post.buttonLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:underline flex items-center gap-1"
+                                                >
+                                                    <ExternalLink className="h-3 w-3" />
+                                                </a>
+                                            ) : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {post.imageLink ? (
+                                                <a
+                                                    href={post.imageLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:underline flex items-center gap-1"
+                                                >
+                                                    <Image className="h-3 w-3" />
+                                                </a>
+                                            ) : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${post.status === 'Done' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                }`}>
+                                                {post.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <Button variant="ghost" size="sm">
+                                                <Trash2 className="h-4 w-4 text-red-600" />
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

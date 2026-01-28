@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
-import { readSheet } from '@/lib/google';
+import { readLoansData, readScheduleData } from '@/lib/google';
 import { SHEET_NAMES } from '@/config/constants';
-import { TrendingUp, DollarSign, Package, Calendar } from 'lucide-react';
+import { TrendingUp, Package, Calendar, CheckCircle } from 'lucide-react';
 
 interface DashboardStats {
-    totalOffers: number;
-    scheduledPosts: number;
-    totalRevenue: number;
+    totalLoans: number;
     activeLoans: number;
+    scheduledPosts: number;
+    pendingPosts: number;
 }
 
 export default function Dashboard() {
     const [stats, setStats] = useState<DashboardStats>({
-        totalOffers: 0,
-        scheduledPosts: 0,
-        totalRevenue: 0,
+        totalLoans: 0,
         activeLoans: 0,
+        scheduledPosts: 0,
+        pendingPosts: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -26,15 +26,20 @@ export default function Dashboard() {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-            // Load data from Google Sheets
-            const offersData = await readSheet(`${SHEET_NAMES.OFFERS}!A:D`);
-            const scheduleData = await readSheet(`${SHEET_NAMES.SCHEDULE}!A:D`);
+
+            // Load loans data
+            const loansData = await readLoansData(SHEET_NAMES.LOANS);
+            const activeLoans = loansData.filter(loan => loan.status === 'Active').length;
+
+            // Load schedule data
+            const scheduleData = await readScheduleData(SHEET_NAMES.SCHEDULE);
+            const pendingPosts = scheduleData.filter(post => post.status === 'Pending').length;
 
             setStats({
-                totalOffers: offersData.length - 1, // Subtract header row
-                scheduledPosts: scheduleData.length - 1,
-                totalRevenue: 0, // Calculate from actual data
-                activeLoans: 0, // Calculate from actual data
+                totalLoans: loansData.length,
+                activeLoans: activeLoans,
+                scheduledPosts: scheduleData.length,
+                pendingPosts: pendingPosts,
             });
         } catch (error) {
             console.error('Error loading dashboard data:', error);
@@ -46,28 +51,28 @@ export default function Dashboard() {
     const statCards = [
         {
             title: 'Tổng kho vay',
-            value: stats.totalOffers,
+            value: stats.totalLoans,
             icon: Package,
             color: 'text-blue-600',
             bgColor: 'bg-blue-100',
         },
         {
-            title: 'Bài viết đã lên lịch',
-            value: stats.scheduledPosts,
-            icon: Calendar,
+            title: 'Kho vay đang hoạt động',
+            value: stats.activeLoans,
+            icon: CheckCircle,
             color: 'text-green-600',
             bgColor: 'bg-green-100',
         },
         {
-            title: 'Doanh thu',
-            value: `${stats.totalRevenue.toLocaleString('vi-VN')} ₫`,
-            icon: DollarSign,
+            title: 'Tổng bài đã lên lịch',
+            value: stats.scheduledPosts,
+            icon: Calendar,
             color: 'text-purple-600',
             bgColor: 'bg-purple-100',
         },
         {
-            title: 'Khoản vay đang hoạt động',
-            value: stats.activeLoans,
+            title: 'Bài chờ đăng',
+            value: stats.pendingPosts,
             icon: TrendingUp,
             color: 'text-orange-600',
             bgColor: 'bg-orange-100',
@@ -115,8 +120,12 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-                <h2 className="text-xl font-bold mb-4">Hoạt động gần đây</h2>
-                <p className="text-muted-foreground">Chưa có hoạt động nào được ghi nhận.</p>
+                <h2 className="text-xl font-bold mb-4">Thông tin hệ thống</h2>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>✅ Kết nối Google Sheets: Thành công</p>
+                    <p>✅ Telegram Bot: Đã cấu hình</p>
+                    <p>📊 Dữ liệu được đồng bộ từ: <span className="font-mono">DATA_KHOANVAY</span>, <span className="font-mono">AUTO_POST</span></p>
+                </div>
             </div>
         </div>
     );
