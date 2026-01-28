@@ -11,7 +11,17 @@ export default function LoginBtn() {
         const initializeGoogleServices = async () => {
             try {
                 await Promise.all([initGoogleAPI(), initGoogleIdentity()]);
-                setSignedIn(isSignedIn());
+
+                // Check if user is signed in after initialization
+                const token = (window as any).gapi?.client?.getToken();
+                const hasValidToken = token !== null && token !== undefined;
+
+                console.log('🔐 Login status check:', {
+                    hasToken: hasValidToken,
+                    token: token
+                });
+
+                setSignedIn(hasValidToken);
             } catch (error) {
                 console.error('Error initializing Google services:', error);
             } finally {
