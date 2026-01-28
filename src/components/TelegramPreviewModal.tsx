@@ -64,11 +64,17 @@ export default function TelegramPreviewModal({
                 {/* Phone Container */}
                 <div className="p-6">
                     <div
-                        className="mx-auto bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg shadow-inner p-4"
-                        style={{ width: '375px', maxWidth: '100%' }}
+                        className="mx-auto rounded-lg shadow-inner p-4 bg-cover bg-center"
+                        style={{
+                            width: '375px',
+                            maxWidth: '100%',
+                            backgroundImage: 'url(/telegram-bg.jpg)',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                        }}
                     >
                         {/* Telegram Chat Header */}
-                        <div className="bg-blue-500 text-white px-4 py-2 rounded-t-lg mb-4 flex items-center gap-2">
+                        <div className="bg-[#517DA2] text-white px-4 py-2 rounded-t-lg mb-4 flex items-center gap-2 shadow-md">
                             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">
                                 📢
                             </div>
@@ -125,7 +131,7 @@ export default function TelegramPreviewModal({
                         </div>
 
                         {/* Timestamp */}
-                        <div className="text-xs text-gray-500 mt-1 ml-1">
+                        <div className="text-xs text-gray-700 mt-1 ml-1 drop-shadow-sm">
                             {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                     </div>
