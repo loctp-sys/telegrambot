@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { initGoogleAPI, initGoogleIdentity, signIn, signOut, isSignedIn } from '@/lib/google';
+import { initGoogleAPI, initGoogleIdentity, signIn, signOut } from '@/lib/google';
 import { LogIn, LogOut } from 'lucide-react';
 
 export default function LoginBtn() {
