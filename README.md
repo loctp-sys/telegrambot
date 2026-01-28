@@ -2,7 +2,12 @@
 
 Hệ thống quản lý tài chính và kho vay thông minh với tích hợp Google Sheets và Telegram.
 
-## 🚀 Tính năng
+## 🚀 Demo
+
+- **Production**: https://telegrambot-sheet.vercel.app
+- **Local**: http://localhost:5173
+
+## ✨ Tính năng
 
 - ✅ Dashboard tổng quan với thống kê
 - ✅ Quản lý kho vay (CRUD)
