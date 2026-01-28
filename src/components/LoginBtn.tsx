@@ -37,10 +37,14 @@ export default function LoginBtn() {
             setLoading(true);
             await signIn();
             setSignedIn(true);
-            // Reload page to fetch data with new authentication
-            window.location.reload();
+
+            // Dispatch custom event to notify other components to refresh data
+            window.dispatchEvent(new Event('google-signin'));
+
+            console.log('✅ Signed in successfully');
         } catch (error) {
             console.error('Error signing in:', error);
+        } finally {
             setLoading(false);
         }
     };
@@ -48,7 +52,8 @@ export default function LoginBtn() {
     const handleSignOut = () => {
         signOut();
         setSignedIn(false);
-        // Reload page to clear data
+
+        // Reload page to clear all data
         window.location.reload();
     };
 

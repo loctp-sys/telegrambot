@@ -21,6 +21,18 @@ export default function Dashboard() {
 
     useEffect(() => {
         loadDashboardData();
+
+        // Listen for sign-in events to refresh data
+        const handleSignIn = () => {
+            console.log('📊 Refreshing dashboard data after sign-in...');
+            loadDashboardData();
+        };
+
+        window.addEventListener('google-signin', handleSignIn);
+
+        return () => {
+            window.removeEventListener('google-signin', handleSignIn);
+        };
     }, []);
 
     const loadDashboardData = async () => {

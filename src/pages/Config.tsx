@@ -13,6 +13,18 @@ export default function Config() {
 
     useEffect(() => {
         loadConfigs();
+
+        // Listen for sign-in events to refresh data
+        const handleSignIn = () => {
+            console.log('⚙️ Refreshing config data after sign-in...');
+            loadConfigs();
+        };
+
+        window.addEventListener('google-signin', handleSignIn);
+
+        return () => {
+            window.removeEventListener('google-signin', handleSignIn);
+        };
     }, []);
 
     const loadConfigs = async () => {

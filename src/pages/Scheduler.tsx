@@ -23,6 +23,18 @@ export default function Scheduler() {
 
     useEffect(() => {
         loadPosts();
+
+        // Listen for sign-in events to refresh data
+        const handleSignIn = () => {
+            console.log('📅 Refreshing scheduler data after sign-in...');
+            loadPosts();
+        };
+
+        window.addEventListener('google-signin', handleSignIn);
+
+        return () => {
+            window.removeEventListener('google-signin', handleSignIn);
+        };
     }, []);
 
     const loadPosts = async () => {

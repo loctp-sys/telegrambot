@@ -19,6 +19,18 @@ export default function Offers() {
 
     useEffect(() => {
         loadOffers();
+
+        // Listen for sign-in events to refresh data
+        const handleSignIn = () => {
+            console.log('🏦 Refreshing offers data after sign-in...');
+            loadOffers();
+        };
+
+        window.addEventListener('google-signin', handleSignIn);
+
+        return () => {
+            window.removeEventListener('google-signin', handleSignIn);
+        };
     }, []);
 
     const loadOffers = async () => {
