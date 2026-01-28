@@ -11,6 +11,8 @@ export default function Scheduler() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [previewPost, setPreviewPost] = useState<ScheduledPost | null>(null);
+    const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>('');
     const [formData, setFormData] = useState({
         date: '',
         time: '',
@@ -92,6 +94,26 @@ export default function Scheduler() {
         });
     };
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setUploadedImage(file);
+
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                setImagePreview(result);
+                setFormData({ ...formData, imageLink: result });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handlePreviewForm = () => {
+        setPreviewPost(formData as ScheduledPost);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -118,7 +140,18 @@ export default function Scheduler() {
 
             {showForm && (
                 <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-                    <h2 className="text-xl font-bold mb-4">Lên lịch bài viết mới</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold">Lên lịch bài viết mới</h2>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handlePreviewForm}
+                            disabled={!formData.content}
+                        >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Xem trước
+                        </Button>
+                    </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -168,14 +201,64 @@ export default function Scheduler() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2">Link ảnh</label>
-                            <input
-                                type="url"
-                                value={formData.imageLink}
-                                onChange={(e) => setFormData({ ...formData, imageLink: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                placeholder="https://..."
-                            />
+                            <label className="block text-sm font-medium mb-2">Link ảnh hoặc tải lên</label>
+                            <div className="space-y-2">
+                                <input
+                                    type="url"
+                                    value={uploadedImage ? '' : formData.imageLink}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, imageLink: e.target.value });
+                                        setUploadedImage(null);
+                                        setImagePreview('');
+                                    }}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                    placeholder="https://... hoặc tải ảnh từ máy"
+                                    disabled={!!uploadedImage}
+                                />
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="hidden"
+                                        id="image-upload"
+                                    />
+                                    <label
+                                        htmlFor="image-upload"
+                                        className="cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium transition-colors"
+                                    >
+                                        📁 Chọn ảnh từ máy
+                                    </label>
+                                    {uploadedImage && (
+                                        <span className="text-sm text-gray-600">
+                                            ✅ {uploadedImage.name}
+                                        </span>
+                                    )}
+                                    {(uploadedImage || imagePreview) && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setUploadedImage(null);
+                                                setImagePreview('');
+                                                setFormData({ ...formData, imageLink: '' });
+                                            }}
+                                        >
+                                            ❌ Xóa
+                                        </Button>
+                                    )}
+                                </div>
+                                {imagePreview && (
+                                    <div className="mt-2">
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="max-w-xs h-auto rounded border"
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
