@@ -27,9 +27,10 @@ export default function LoginBtn() {
             setLoading(true);
             await signIn();
             setSignedIn(true);
+            // Reload page to fetch data with new authentication
+            window.location.reload();
         } catch (error) {
             console.error('Error signing in:', error);
-        } finally {
             setLoading(false);
         }
     };
@@ -37,6 +38,8 @@ export default function LoginBtn() {
     const handleSignOut = () => {
         signOut();
         setSignedIn(false);
+        // Reload page to clear data
+        window.location.reload();
     };
 
     if (loading) {
