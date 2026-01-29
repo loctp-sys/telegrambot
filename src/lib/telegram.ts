@@ -1,5 +1,22 @@
 import { TELEGRAM_CONFIG } from '@/config/constants';
 
+const cleanTelegramHTML = (html: string): string => {
+    let clean = html;
+    // Replace <p> with nothing (start) and </p> with newline
+    clean = clean.replace(/<p[^>]*>/g, '').replace(/<\/p>/g, '\n');
+
+    // Replace <br> with newline
+    clean = clean.replace(/<br\s*\/?>/g, '\n');
+
+    // Remove class attributes from tags (Telegram doesn't support them except class on code inside pre, which we preserve if needed, but Tiptap adds it on pre/code)
+    // Actually, simply removing class="..." globally is safer for most tags unless we specifically need language highlighting class on code.
+    // Tiptap adds class="code-block" on pre. Telegram doesn't like it.
+    // Let's strip class attributes generally.
+    clean = clean.replace(/ class="[^"]*"/g, '');
+
+    return clean.trim();
+};
+
 /**
  * Send a message to Telegram
  */
@@ -14,6 +31,9 @@ export const sendTelegramMessage = async (message: string): Promise<boolean> => 
     // Use local proxy to avoid CORS
     const url = '/api/telegram';
 
+    // Clean HTML before sending
+    const cleanedMessage = cleanTelegramHTML(message);
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -25,7 +45,7 @@ export const sendTelegramMessage = async (message: string): Promise<boolean> => 
                 method: 'sendMessage',
                 body: {
                     chat_id: chatId,
-                    text: message,
+                    text: cleanedMessage,
                     parse_mode: 'HTML',
                 }
             }),
