@@ -3,8 +3,9 @@ import { readScheduleData, addScheduledPost, updateScheduledPost, deleteSchedule
 import { notifyScheduledPost, sendTestMessage } from '@/lib/telegram';
 import { SHEET_NAMES } from '@/config/constants';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ExternalLink, Image, Eye, Edit, Bold, Italic, Underline, Code, Link } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image, Eye, Edit } from 'lucide-react';
 import TelegramPreviewModal from '@/components/TelegramPreviewModal';
+import TiptapEditor from '@/components/TiptapEditor';
 
 // Smart CTA Presets
 const CTA_PRESETS = [
@@ -210,39 +211,7 @@ export default function Content() {
         setPreviewPost(formData as ScheduledPost);
     };
 
-    const handleFormat = (tag: string) => {
-        const textarea = document.getElementById('caption-textarea') as HTMLTextAreaElement;
-        if (!textarea) return;
 
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = formData.content;
-        const selectedText = text.substring(start, end);
-
-        let newText = '';
-        let newCursorPos = 0;
-
-        if (tag === 'link') {
-            const url = prompt('Nhập đường dẫn URL:', 'https://');
-            if (!url) return;
-            newText = text.substring(0, start) + `<a href="${url}">${selectedText || 'Link'}</a>` + text.substring(end);
-            newCursorPos = start + `<a href="${url}">${selectedText || 'Link'}</a>`.length;
-        } else {
-            const openTag = `<${tag}>`;
-            const closeTag = `</${tag}>`;
-            newText = text.substring(0, start) + openTag + (selectedText || '') + closeTag + text.substring(end);
-            newCursorPos = end + openTag.length + closeTag.length;
-            if (!selectedText) newCursorPos = start + openTag.length;
-        }
-
-        setFormData({ ...formData, content: newText });
-
-        // Restore focus and cursor
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(newCursorPos, newCursorPos);
-        }, 0);
-    };
 
     if (loading) {
         return (
@@ -311,34 +280,13 @@ export default function Content() {
                                 <label className="block text-sm font-medium mb-2">Nội dung Caption *</label>
 
                                 {/* Formatting Toolbar */}
-                                <div className="flex items-center gap-1 mb-2 border rounded-md p-1 bg-gray-50 w-fit">
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('b')} title="In đậm">
-                                        <Bold className="h-4 w-4" />
-                                    </Button>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('i')} title="In nghiêng">
-                                        <Italic className="h-4 w-4" />
-                                    </Button>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('u')} title="Gạch chân">
-                                        <Underline className="h-4 w-4" />
-                                    </Button>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('code')} title="Monospace">
-                                        <Code className="h-4 w-4" />
-                                    </Button>
-                                    <div className="w-px h-4 bg-gray-300 mx-1"></div>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('link')} title="Chèn link">
-                                        <Link className="h-4 w-4" />
-                                    </Button>
-                                </div>
-
-                                <textarea
-                                    id="caption-textarea"
-                                    required
-                                    value={formData.content}
-                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                    rows={4}
-                                    placeholder="Nhập nội dung bài viết..."
+                                <TiptapEditor
+                                    content={formData.content}
+                                    onChange={(html) => setFormData({ ...formData, content: html })}
                                 />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Hỗ trợ định dạng: Bold, Italic, Underline, Strike, Code, Spoiler, Link.
+                                </p>
                             </div>
 
                             <div>
