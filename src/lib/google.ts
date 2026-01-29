@@ -56,7 +56,7 @@ export const initGoogleAPI = (): Promise<void> => {
                     console.log('🔌 Initializing gapi client...');
 
                     // Direct Environment Variable Check
-                    const envApiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+                    const envApiKey = import.meta.env.VITE_GOOGLE_API_KEY?.trim();
                     console.log('API Key Status:', !!envApiKey);
 
                     if (!envApiKey) {
@@ -64,11 +64,12 @@ export const initGoogleAPI = (): Promise<void> => {
                     }
 
                     // Debug API Configuration (Masked)
-                    const maskedKey = envApiKey
-                        ? `${envApiKey.substring(0, 5)}...${envApiKey.substring(envApiKey.length - 4)}`
-                        : 'MISSING';
+                    // Show first 4 and last 4 chars to verify exact content matches console
+                    const maskedKey = envApiKey.length > 8
+                        ? `${envApiKey.substring(0, 4)}...${envApiKey.substring(envApiKey.length - 4)}`
+                        : 'INVALID_LENGTH';
 
-                    console.log(`🔑 Using API Key: ${maskedKey}`);
+                    console.log(`🔑 Using API Key: '${maskedKey}' (Length: ${envApiKey.length})`);
 
                     await (window as any).gapi.client.init({
                         apiKey: envApiKey,
