@@ -153,7 +153,7 @@ export default function Content() {
         if (!confirm('🗑️ Bạn có chắc chắn muốn xóa content này?')) return;
 
         try {
-            await deleteScheduledPost(SHEET_NAMES.SCHEDULE, index);
+            await deleteScheduledPost(index);
             alert('✅ Content đã được xóa!');
             loadPosts();
         } catch (error) {
