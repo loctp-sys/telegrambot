@@ -32,14 +32,55 @@ export default async function handler(req, res) {
     try {
         const url = `https://api.telegram.org/bot${token}/${method}`;
 
-        const response = await fetch(url, {
+        // Prepare request options
+        let requestOptions = {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        });
+            headers: {},
+        };
 
+        // Check if photo is a Base64 string (data URI)
+        // Telegram requires multipart/form-data for file uploads
+        if (body.photo && typeof body.photo === 'string' && body.photo.startsWith('data:')) {
+            try {
+                // Construct FormData for multipart upload
+                const formData = new FormData();
+
+                // Add all other fields
+                for (const key in body) {
+                    if (key !== 'photo') {
+                        // Handle complex objects (like reply_markup) by stringifying them
+                        if (typeof body[key] === 'object') {
+                            formData.append(key, JSON.stringify(body[key]));
+                        } else {
+                            formData.append(key, body[key]);
+                        }
+                    }
+                }
+
+                // Process Base64 Image
+                // Fetch the data URI to get a Blob (Node 18+ supports this)
+                const imageResponse = await fetch(body.photo);
+                const blob = await imageResponse.blob();
+
+                // Append photo with filename
+                formData.append('photo', blob, 'image.jpg');
+
+                requestOptions.body = formData;
+                // Note: Do NOT set Content-Type header manually for FormData, 
+                // fetch will set it with the correct boundary
+            } catch (err) {
+                console.error('Error processing Base64 image:', err);
+                // Fallback to sending as JSON if blob conversion fails (likely to fail at Telegram end but worth a try)
+                requestOptions.headers['Content-Type'] = 'application/json';
+                requestOptions.body = JSON.stringify(body);
+            }
+        } else {
+            // Standard JSON request (for text messages or URL-based photos)
+            requestOptions.headers['Content-Type'] = 'application/json';
+            requestOptions.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, requestOptions);
         const data = await response.json();
 
         if (!response.ok) {
