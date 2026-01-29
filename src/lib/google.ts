@@ -54,8 +54,24 @@ export const initGoogleAPI = (): Promise<void> => {
             (window as any).gapi.load('client', async () => {
                 try {
                     console.log('🔌 Initializing gapi client...');
+
+                    // Direct Environment Variable Check
+                    const envApiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+                    console.log('API Key Status:', !!envApiKey);
+
+                    if (!envApiKey) {
+                        throw new Error("VITE_GOOGLE_API_KEY is missing from environment variables");
+                    }
+
+                    // Debug API Configuration (Masked)
+                    const maskedKey = envApiKey
+                        ? `${envApiKey.substring(0, 5)}...${envApiKey.substring(envApiKey.length - 4)}`
+                        : 'MISSING';
+
+                    console.log(`🔑 Using API Key: ${maskedKey}`);
+
                     await (window as any).gapi.client.init({
-                        apiKey: GOOGLE_CONFIG.apiKey,
+                        apiKey: envApiKey,
                         discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
                     });
 
@@ -69,7 +85,6 @@ export const initGoogleAPI = (): Promise<void> => {
                     resolve();
                 } catch (error: any) {
                     console.error('❌ gapi.client.init error:', error);
-                    // Provide more detailed error if available
                     const details = error?.result?.error?.message || error?.message || JSON.stringify(error);
                     reject(new Error(`GAPI Init Failed: ${details}`));
                 }
