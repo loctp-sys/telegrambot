@@ -279,7 +279,7 @@ export default function Content() {
                                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
                             </div>
-                            <div>
+                            <div className="md:col-span-2">
                                 <label className="block text-sm font-medium mb-2">Nội dung Caption *</label>
 
                                 {/* Formatting Toolbar */}
@@ -409,13 +409,14 @@ export default function Content() {
                                     />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="flex gap-2">
-                                <Button type="submit">{editingIndex !== null ? 'Cập nhật' : 'Lưu'}</Button>
-                                <Button type="button" variant="outline" onClick={resetForm}>
-                                    Hủy
-                                </Button>
-                            </div>
+                        <div className="flex gap-2">
+                            <Button type="submit">{editingIndex !== null ? 'Cập nhật' : 'Lưu'}</Button>
+                            <Button type="button" variant="outline" onClick={resetForm}>
+                                Hủy
+                            </Button>
+                        </div>
                     </form>
                 </div>
             )}
