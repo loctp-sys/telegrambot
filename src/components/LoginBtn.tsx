@@ -1,63 +1,20 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { initGoogleAPI, initGoogleIdentity, signIn, signOut } from '@/lib/google';
+import { useAuth } from '@/contexts/AuthContext';
 import { LogIn, LogOut } from 'lucide-react';
 
 export default function LoginBtn() {
-    const [signedIn, setSignedIn] = useState(false);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const initializeGoogleServices = async () => {
-            try {
-                await Promise.all([initGoogleAPI(), initGoogleIdentity()]);
-
-                // Check if user is signed in after initialization
-                const token = (window as any).gapi?.client?.getToken();
-                const hasValidToken = token !== null && token !== undefined;
-
-                console.log('🔐 Login status check:', {
-                    hasToken: hasValidToken,
-                    token: token
-                });
-
-                setSignedIn(hasValidToken);
-            } catch (error) {
-                console.error('Error initializing Google services:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        initializeGoogleServices();
-    }, []);
+    const { isAuthenticated, isLoading, login, logout } = useAuth();
 
     const handleSignIn = async () => {
         try {
-            setLoading(true);
-            await signIn();
-            setSignedIn(true);
-
-            // Dispatch custom event to notify other components to refresh data
-            window.dispatchEvent(new Event('google-signin'));
-
-            console.log('✅ Signed in successfully');
+            await login();
         } catch (error) {
             console.error('Error signing in:', error);
-        } finally {
-            setLoading(false);
+            alert('❌ Lỗi khi đăng nhập. Vui lòng thử lại!');
         }
     };
 
-    const handleSignOut = () => {
-        signOut();
-        setSignedIn(false);
-
-        // Reload page to clear all data
-        window.location.reload();
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <Button disabled>
                 Đang tải...
@@ -65,9 +22,9 @@ export default function LoginBtn() {
         );
     }
 
-    if (signedIn) {
+    if (isAuthenticated) {
         return (
-            <Button onClick={handleSignOut} variant="outline">
+            <Button onClick={logout} variant="outline">
                 <LogOut className="mr-2 h-4 w-4" />
                 Đăng xuất
             </Button>
