@@ -39,13 +39,12 @@ export default function TelegramPreviewModal({
         }
     };
 
-    // Format content with line breaks
-    const formattedContent = content.split('\n').map((line, index) => (
-        <span key={index}>
-            {line}
-            {index < content.split('\n').length - 1 && <br />}
-        </span>
-    ));
+    // Format content with HTML tags and line breaks
+    const getFormattedContent = () => {
+        // Replace newlines with <br/>
+        const htmlWithBreaks = content.replace(/\n/g, '<br/>');
+        return { __html: htmlWithBreaks };
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -110,9 +109,10 @@ export default function TelegramPreviewModal({
 
                             {/* Caption Section */}
                             {content && (
-                                <div className="p-3 text-sm text-gray-800 whitespace-pre-wrap">
-                                    {formattedContent}
-                                </div>
+                                <div
+                                    className="p-3 text-sm text-gray-800 whitespace-pre-wrap"
+                                    dangerouslySetInnerHTML={getFormattedContent()}
+                                />
                             )}
 
                             {/* Inline Button */}

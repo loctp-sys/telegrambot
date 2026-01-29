@@ -3,7 +3,7 @@ import { readScheduleData, addScheduledPost, updateScheduledPost, deleteSchedule
 import { notifyScheduledPost, sendTestMessage } from '@/lib/telegram';
 import { SHEET_NAMES } from '@/config/constants';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ExternalLink, Image, Eye, Edit } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image, Eye, Edit, Bold, Italic, Underline, Code, Link } from 'lucide-react';
 import TelegramPreviewModal from '@/components/TelegramPreviewModal';
 
 export default function Content() {
@@ -182,6 +182,40 @@ export default function Content() {
         setPreviewPost(formData as ScheduledPost);
     };
 
+    const handleFormat = (tag: string) => {
+        const textarea = document.getElementById('caption-textarea') as HTMLTextAreaElement;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = formData.content;
+        const selectedText = text.substring(start, end);
+
+        let newText = '';
+        let newCursorPos = 0;
+
+        if (tag === 'link') {
+            const url = prompt('Nhập đường dẫn URL:', 'https://');
+            if (!url) return;
+            newText = text.substring(0, start) + `<a href="${url}">${selectedText || 'Link'}</a>` + text.substring(end);
+            newCursorPos = start + `<a href="${url}">${selectedText || 'Link'}</a>`.length;
+        } else {
+            const openTag = `<${tag}>`;
+            const closeTag = `</${tag}>`;
+            newText = text.substring(0, start) + openTag + (selectedText || '') + closeTag + text.substring(end);
+            newCursorPos = end + openTag.length + closeTag.length;
+            if (!selectedText) newCursorPos = start + openTag.length;
+        }
+
+        setFormData({ ...formData, content: newText });
+
+        // Restore focus and cursor
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -248,120 +282,143 @@ export default function Content() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2">Nội dung Caption *</label>
-                            <textarea
-                                required
-                                value={formData.content}
-                                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                rows={4}
-                                placeholder="Nhập nội dung bài viết..."
-                            />
-                        </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Nội dung Caption *</label>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Link nút bấm</label>
-                            <input
-                                type="url"
-                                value={formData.buttonLink}
-                                onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                placeholder="https://..."
-                            />
-                        </div>
+                                {/* Formatting Toolbar */}
+                                <div className="flex items-center gap-1 mb-2 border rounded-md p-1 bg-gray-50 w-fit">
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('b')} title="In đậm">
+                                        <Bold className="h-4 w-4" />
+                                    </Button>
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('i')} title="In nghiêng">
+                                        <Italic className="h-4 w-4" />
+                                    </Button>
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('u')} title="Gạch chân">
+                                        <Underline className="h-4 w-4" />
+                                    </Button>
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('code')} title="Monospace">
+                                        <Code className="h-4 w-4" />
+                                    </Button>
+                                    <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleFormat('link')} title="Chèn link">
+                                        <Link className="h-4 w-4" />
+                                    </Button>
+                                </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Link ảnh hoặc tải lên</label>
-                            <div className="space-y-2">
+                                <textarea
+                                    id="caption-textarea"
+                                    required
+                                    value={formData.content}
+                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                    rows={4}
+                                    placeholder="Nhập nội dung bài viết..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Link nút bấm</label>
                                 <input
                                     type="url"
-                                    value={uploadedImage ? '' : formData.imageLink}
-                                    onChange={(e) => {
-                                        setFormData({ ...formData, imageLink: e.target.value });
-                                        setUploadedImage(null);
-                                        setImagePreview('');
-                                    }}
+                                    value={formData.buttonLink}
+                                    onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="https://... hoặc tải ảnh từ máy"
-                                    disabled={!!uploadedImage}
+                                    placeholder="https://..."
                                 />
-                                <div className="flex items-center gap-2">
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Link ảnh hoặc tải lên</label>
+                                <div className="space-y-2">
                                     <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        className="hidden"
-                                        id="image-upload"
+                                        type="url"
+                                        value={uploadedImage ? '' : formData.imageLink}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, imageLink: e.target.value });
+                                            setUploadedImage(null);
+                                            setImagePreview('');
+                                        }}
+                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                        placeholder="https://... hoặc tải ảnh từ máy"
+                                        disabled={!!uploadedImage}
                                     />
-                                    <label
-                                        htmlFor="image-upload"
-                                        className="cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium transition-colors"
-                                    >
-                                        📁 Chọn ảnh từ máy
-                                    </label>
-                                    {uploadedImage && (
-                                        <span className="text-sm text-gray-600">
-                                            ✅ {uploadedImage.name}
-                                        </span>
-                                    )}
-                                    {(uploadedImage || imagePreview) && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                setUploadedImage(null);
-                                                setImagePreview('');
-                                                setFormData({ ...formData, imageLink: '' });
-                                            }}
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="hidden"
+                                            id="image-upload"
+                                        />
+                                        <label
+                                            htmlFor="image-upload"
+                                            className="cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium transition-colors"
                                         >
-                                            ❌ Xóa
-                                        </Button>
+                                            📁 Chọn ảnh từ máy
+                                        </label>
+                                        {uploadedImage && (
+                                            <span className="text-sm text-gray-600">
+                                                ✅ {uploadedImage.name}
+                                            </span>
+                                        )}
+                                        {(uploadedImage || imagePreview) && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setUploadedImage(null);
+                                                    setImagePreview('');
+                                                    setFormData({ ...formData, imageLink: '' });
+                                                }}
+                                            >
+                                                ❌ Xóa
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {imagePreview && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="max-w-xs h-auto rounded border"
+                                            />
+                                        </div>
                                     )}
                                 </div>
-                                {imagePreview && (
-                                    <div className="mt-2">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="max-w-xs h-auto rounded border"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Trạng thái *</label>
-                                <select
-                                    required
-                                    value={formData.status}
-                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                >
-                                    <option value="Pending">Pending</option>
-                                    <option value="Done">Done</option>
-                                </select>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Giờ đăng chính xác</label>
-                                <input
-                                    type="datetime-local"
-                                    value={formData.exactTime}
-                                    onChange={(e) => setFormData({ ...formData, exactTime: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                        </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Trạng thái *</label>
+                                    <select
+                                        required
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                    >
+                                        <option value="Pending">Pending</option>
+                                        <option value="Done">Done</option>
+                                    </select>
+                                </div>
 
-                        <div className="flex gap-2">
-                            <Button type="submit">{editingIndex !== null ? 'Cập nhật' : 'Lưu'}</Button>
-                            <Button type="button" variant="outline" onClick={resetForm}>
-                                Hủy
-                            </Button>
-                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Giờ đăng chính xác</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={formData.exactTime}
+                                        onChange={(e) => setFormData({ ...formData, exactTime: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <Button type="submit">{editingIndex !== null ? 'Cập nhật' : 'Lưu'}</Button>
+                                <Button type="button" variant="outline" onClick={resetForm}>
+                                    Hủy
+                                </Button>
+                            </div>
                     </form>
                 </div>
             )}
