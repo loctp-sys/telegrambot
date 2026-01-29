@@ -17,6 +17,9 @@ const CTA_PRESETS = [
     "💰 NHẬN ƯU ĐÃI 0%"
 ];
 
+// Fallback CTA if none provided
+const DEFAULT_CTA = "🔥 ĐĂNG KÝ NGAY";
+
 export default function Content() {
     const [posts, setPosts] = useState<ScheduledPost[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,6 +55,11 @@ export default function Content() {
             window.removeEventListener('google-signin', handleSignIn);
         };
     }, []);
+
+    // Derived state: Unique used CTA labels + Presets
+    const uniqueUsedLabels = Array.from(new Set(posts.map(p => p.buttonText).filter(Boolean))) as string[];
+    const ctaSuggestions = Array.from(new Set([...CTA_PRESETS, ...uniqueUsedLabels]));
+
 
     const loadPosts = async () => {
         try {
@@ -134,7 +142,7 @@ export default function Content() {
                 content: post.content,
                 imageLink: post.imageLink,
                 buttonLink: post.buttonLink,
-                buttonText: post.buttonText,
+                buttonText: post.buttonText || DEFAULT_CTA,
             });
 
             if (success) {
@@ -352,7 +360,7 @@ export default function Content() {
                                     placeholder="Chọn hoặc nhập tên nút..."
                                 />
                                 <datalist id="cta-suggestions">
-                                    {CTA_PRESETS.map((cta, index) => (
+                                    {ctaSuggestions.map((cta, index) => (
                                         <option key={index} value={cta} />
                                     ))}
                                 </datalist>
