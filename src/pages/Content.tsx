@@ -408,16 +408,6 @@ export default function Content() {
                                         <option value="Done">Done</option>
                                     </select>
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">Giờ đăng chính xác</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={formData.exactTime}
-                                        onChange={(e) => setFormData({ ...formData, exactTime: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -456,7 +446,9 @@ export default function Content() {
                             ) : (
                                 posts.map((post, index) => (
                                     <tr key={index} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">{post.date}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            {post.date.split('-').reverse().join('/')}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">{post.time}</td>
                                         <td className="px-6 py-4 text-sm max-w-xs truncate" title={post.content}>
                                             {post.content}

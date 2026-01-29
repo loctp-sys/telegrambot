@@ -2,17 +2,24 @@ import { TELEGRAM_CONFIG } from '@/config/constants';
 
 const cleanTelegramHTML = (html: string): string => {
     let clean = html;
-    // Replace <p> with nothing (start) and </p> with newline
-    clean = clean.replace(/<p[^>]*>/g, '').replace(/<\/p>/g, '\n');
 
-    // Replace <br> with newline
-    clean = clean.replace(/<br\s*\/?>/g, '\n');
+    // 1. Convert block elements to newlines
+    clean = clean.replace(/<\/p>/gi, '\n');
+    clean = clean.replace(/<\/div>/gi, '\n');
+    clean = clean.replace(/<br\s*\/?>/gi, '\n');
 
-    // Remove class attributes from tags (Telegram doesn't support them except class on code inside pre, which we preserve if needed, but Tiptap adds it on pre/code)
-    // Actually, simply removing class="..." globally is safer for most tags unless we specifically need language highlighting class on code.
-    // Tiptap adds class="code-block" on pre. Telegram doesn't like it.
-    // Let's strip class attributes generally.
-    clean = clean.replace(/ class="[^"]*"/g, '');
+    // 2. Remove forbidden start tags (p, div, span) but keep content
+    clean = clean.replace(/<p[^>]*>/gi, '');
+    clean = clean.replace(/<div[^>]*>/gi, '');
+    clean = clean.replace(/<span[^>]*>/gi, '');
+    clean = clean.replace(/<\/span>/gi, '');
+
+    // 3. Remove all attributes from tags EXCEPT href
+    // This regex explicitly targets common attributes to strip them
+    clean = clean.replace(/\s+(class|style|id|dir|target|rel|width|height)="[^"]*"/gi, '');
+
+    // 4. Clean up multiple newlines
+    clean = clean.replace(/\n\s*\n/g, '\n\n');
 
     return clean.trim();
 };
@@ -149,6 +156,9 @@ export const sendTestMessage = async (data: {
         ]]
     } : undefined;
 
+    // Clean caption/text
+    const cleanedText = cleanTelegramHTML(data.content);
+
     // Prepare message body
     const body: any = {
         chat_id: chatId,
@@ -158,9 +168,9 @@ export const sendTestMessage = async (data: {
 
     if (data.imageLink) {
         body.photo = data.imageLink;
-        body.caption = data.content;
+        body.caption = cleanedText; // Use cleaned text for caption
     } else {
-        body.text = data.content;
+        body.text = cleanedText; // Use cleaned text for message
     }
 
     try {
@@ -171,16 +181,18 @@ export const sendTestMessage = async (data: {
             },
             body: JSON.stringify({
                 botToken,
-                method,
-                body
+                method: method,
+                body: body
             }),
         });
 
-        const result = await response.json();
-        return result.ok;
+        const resData = await response.json();
+        if (!response.ok) {
+            console.error('Telegram API Error:', resData);
+        }
+        return resData.ok;
     } catch (error) {
-        console.error('Error sending test message:', error);
+        console.error('Error sending Telegram message:', error);
         return false;
     }
 };
-
