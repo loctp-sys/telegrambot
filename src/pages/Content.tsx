@@ -6,6 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Plus, Trash2, ExternalLink, Image, Eye, Edit, Bold, Italic, Underline, Code, Link } from 'lucide-react';
 import TelegramPreviewModal from '@/components/TelegramPreviewModal';
 
+// Smart CTA Presets
+const CTA_PRESETS = [
+    "🔥 ĐĂNG KÝ NGAY",
+    "🚀 LẤY TIỀN NGAY",
+    "💸 NHẬN KHOẢN VAY",
+    "🏦 VAY NGAY TẠI ĐÂY",
+    "✅ KIỂM TRA HẠN MỨC",
+    "📱 TẢI APP NGAY",
+    "💰 NHẬN ƯU ĐÃI 0%"
+];
+
 export default function Content() {
     const [posts, setPosts] = useState<ScheduledPost[]>([]);
     const [loading, setLoading] = useState(true);
@@ -20,6 +31,7 @@ export default function Content() {
         time: '',
         content: '',
         buttonLink: '',
+        buttonText: '',
         imageLink: '',
         status: 'Pending',
         exactTime: '',
@@ -121,6 +133,7 @@ export default function Content() {
                 content: post.content,
                 imageLink: post.imageLink,
                 buttonLink: post.buttonLink,
+                buttonText: post.buttonText,
             });
 
             if (success) {
@@ -141,7 +154,10 @@ export default function Content() {
     };
 
     const handleEdit = (post: ScheduledPost, index: number) => {
-        setFormData(post);
+        setFormData({
+            ...post,
+            buttonText: post.buttonText || '',
+        });
         setEditingIndex(index);
         setShowForm(true);
         if (post.imageLink && post.imageLink.startsWith('data:')) {
@@ -322,6 +338,23 @@ export default function Content() {
                                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                     placeholder="https://..."
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Tên nút bấm (CTA)</label>
+                                <input
+                                    type="text"
+                                    list="cta-suggestions"
+                                    value={formData.buttonText || ''}
+                                    onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                    placeholder="Chọn hoặc nhập tên nút..."
+                                />
+                                <datalist id="cta-suggestions">
+                                    {CTA_PRESETS.map((cta, index) => (
+                                        <option key={index} value={cta} />
+                                    ))}
+                                </datalist>
                             </div>
 
                             <div>

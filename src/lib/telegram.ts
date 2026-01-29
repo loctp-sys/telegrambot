@@ -107,6 +107,7 @@ export const sendTestMessage = async (data: {
     content: string;
     imageLink?: string;
     buttonLink?: string;
+    buttonText?: string;
 }): Promise<boolean> => {
     const { botToken, chatId } = TELEGRAM_CONFIG;
 
@@ -122,7 +123,7 @@ export const sendTestMessage = async (data: {
     const keyboard = data.buttonLink ? {
         inline_keyboard: [[
             {
-                text: '🔗 Mở liên kết',
+                text: data.buttonText || '🔗 Mở liên kết',
                 url: data.buttonLink
             }
         ]]
