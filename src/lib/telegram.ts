@@ -6,12 +6,13 @@ import { TELEGRAM_CONFIG } from '@/config/constants';
 export const sendTelegramMessage = async (message: string): Promise<boolean> => {
     const { botToken, chatId } = TELEGRAM_CONFIG;
 
-    if (!botToken || !chatId) {
-        console.error('Telegram configuration is missing');
+    if (!chatId) {
+        console.error('Telegram Chat ID is missing');
         return false;
     }
 
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    // Use local proxy to avoid CORS
+    const url = '/api/telegram';
 
     try {
         const response = await fetch(url, {
@@ -20,9 +21,13 @@ export const sendTelegramMessage = async (message: string): Promise<boolean> => 
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                chat_id: chatId,
-                text: message,
-                parse_mode: 'HTML',
+                botToken, // Optional: pass token if allowed by proxy, otherwise proxy uses env
+                method: 'sendMessage',
+                body: {
+                    chat_id: chatId,
+                    text: message,
+                    parse_mode: 'HTML',
+                }
             }),
         });
 
@@ -105,71 +110,53 @@ export const sendTestMessage = async (data: {
 }): Promise<boolean> => {
     const { botToken, chatId } = TELEGRAM_CONFIG;
 
-    if (!botToken || !chatId) {
-        console.error('Telegram configuration is missing');
+    if (!chatId) {
+        console.error('Telegram Chat ID is missing');
         return false;
     }
 
+    const url = '/api/telegram';
+    const method = data.imageLink ? 'sendPhoto' : 'sendMessage';
+
+    // Prepare inline keyboard if button link exists
+    const keyboard = data.buttonLink ? {
+        inline_keyboard: [[
+            {
+                text: '🔗 Mở liên kết',
+                url: data.buttonLink
+            }
+        ]]
+    } : undefined;
+
+    // Prepare message body
+    const body: any = {
+        chat_id: chatId,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+    };
+
+    if (data.imageLink) {
+        body.photo = data.imageLink;
+        body.caption = data.content;
+    } else {
+        body.text = data.content;
+    }
+
     try {
-        // If there's an image, use sendPhoto, otherwise use sendMessage
-        if (data.imageLink) {
-            const url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                botToken,
+                method,
+                body
+            }),
+        });
 
-            // Prepare inline keyboard if button link exists
-            const keyboard = data.buttonLink ? {
-                inline_keyboard: [[
-                    {
-                        text: '🔗 Mở liên kết',
-                        url: data.buttonLink
-                    }
-                ]]
-            } : undefined;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    photo: data.imageLink,
-                    caption: data.content,
-                    parse_mode: 'HTML',
-                    reply_markup: keyboard,
-                }),
-            });
-
-            const result = await response.json();
-            return result.ok;
-        } else {
-            // Text-only message with optional button
-            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-
-            const keyboard = data.buttonLink ? {
-                inline_keyboard: [[
-                    {
-                        text: '🔗 Mở liên kết',
-                        url: data.buttonLink
-                    }
-                ]]
-            } : undefined;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: data.content,
-                    parse_mode: 'HTML',
-                    reply_markup: keyboard,
-                }),
-            });
-
-            const result = await response.json();
-            return result.ok;
-        }
+        const result = await response.json();
+        return result.ok;
     } catch (error) {
         console.error('Error sending test message:', error);
         return false;
