@@ -104,9 +104,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 throw new Error('Failed to get token from Google');
             }
 
-            // Get user info from Google Identity
-            const googleUser = (window as any).google?.accounts?.id;
-
             // Calculate expiration (1 hour from now)
             const expiresAt = Date.now() + 3600 * 1000;
 
