@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
-import { readScheduleData, addScheduledPost, type ScheduledPost } from '@/lib/google';
+import { readScheduleData, addScheduledPost, updateScheduledPost, deleteScheduledPost, type ScheduledPost } from '@/lib/google';
 import { notifyScheduledPost, sendTestMessage } from '@/lib/telegram';
 import { SHEET_NAMES } from '@/config/constants';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ExternalLink, Image, Eye } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image, Eye, Edit, Rocket } from 'lucide-react';
 import TelegramPreviewModal from '@/components/TelegramPreviewModal';
 
-export default function Scheduler() {
+export default function Content() {
     const [posts, setPosts] = useState<ScheduledPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [previewPost, setPreviewPost] = useState<ScheduledPost | null>(null);
     const [uploadedImage, setUploadedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
+    const [broadcasting, setBroadcasting] = useState<number | null>(null);
     const [formData, setFormData] = useState({
         date: '',
         time: '',
@@ -28,7 +30,7 @@ export default function Scheduler() {
 
         // Listen for sign-in events to refresh data
         const handleSignIn = () => {
-            console.log('📅 Refreshing scheduler data after sign-in...');
+            console.log('📄 Refreshing content data after sign-in...');
             loadPosts();
         };
 
@@ -63,27 +65,43 @@ export default function Scheduler() {
         e.preventDefault();
 
         try {
-            await addScheduledPost(SHEET_NAMES.SCHEDULE, formData);
-            await notifyScheduledPost({
-                title: formData.content.substring(0, 50) + '...',
-                platform: 'Telegram',
-                scheduledTime: `${formData.date} ${formData.time}`,
-            });
+            if (editingIndex !== null) {
+                // Update existing post
+                await updateScheduledPost(SHEET_NAMES.SCHEDULE, editingIndex, formData);
+                alert('✅ Content đã được cập nhật!');
+            } else {
+                // Add new post
+                await addScheduledPost(SHEET_NAMES.SCHEDULE, formData);
+                await notifyScheduledPost({
+                    title: formData.content.substring(0, 50) + '...',
+                    platform: 'Telegram',
+                    scheduledTime: `${formData.date} ${formData.time}`,
+                });
+                alert('✅ Content đã được thêm!');
+            }
 
-            setFormData({
-                date: '',
-                time: '',
-                content: '',
-                buttonLink: '',
-                imageLink: '',
-                status: 'Pending',
-                exactTime: '',
-            });
-            setShowForm(false);
+            resetForm();
             loadPosts();
         } catch (error) {
-            console.error('Error adding post:', error);
+            console.error('Error saving post:', error);
+            alert('❌ Lỗi khi lưu content!');
         }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            date: '',
+            time: '',
+            content: '',
+            buttonLink: '',
+            imageLink: '',
+            status: 'Pending',
+            exactTime: '',
+        });
+        setUploadedImage(null);
+        setImagePreview('');
+        setShowForm(false);
+        setEditingIndex(null);
     };
 
     const handleSendTest = async (post: ScheduledPost) => {
@@ -92,6 +110,56 @@ export default function Scheduler() {
             imageLink: post.imageLink,
             buttonLink: post.buttonLink,
         });
+    };
+
+    const handleBroadcastNow = async (post: ScheduledPost, index: number) => {
+        if (!confirm('🚀 Gửi content này ngay lập tức đến Telegram?')) return;
+
+        try {
+            setBroadcasting(index);
+            const success = await sendTestMessage({
+                content: post.content,
+                imageLink: post.imageLink,
+                buttonLink: post.buttonLink,
+            });
+
+            if (success) {
+                // Update status to Done
+                await updateScheduledPost(SHEET_NAMES.SCHEDULE, index, {
+                    ...post,
+                    status: 'Done',
+                });
+                alert('✅ Content đã được gửi thành công!');
+                loadPosts();
+            }
+        } catch (error) {
+            console.error('Error broadcasting:', error);
+            alert('❌ Lỗi khi gửi content!');
+        } finally {
+            setBroadcasting(null);
+        }
+    };
+
+    const handleEdit = (post: ScheduledPost, index: number) => {
+        setFormData(post);
+        setEditingIndex(index);
+        setShowForm(true);
+        if (post.imageLink && post.imageLink.startsWith('data:')) {
+            setImagePreview(post.imageLink);
+        }
+    };
+
+    const handleDelete = async (index: number) => {
+        if (!confirm('🗑️ Bạn có chắc chắn muốn xóa content này?')) return;
+
+        try {
+            await deleteScheduledPost(SHEET_NAMES.SCHEDULE, index);
+            alert('✅ Content đã được xóa!');
+            loadPosts();
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            alert('❌ Lỗi khi xóa content!');
+        }
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,19 +197,21 @@ export default function Scheduler() {
         <div>
             <div className="mb-8 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Lên lịch đăng bài</h1>
-                    <p className="text-muted-foreground mt-2">Quản lý lịch đăng bài trên các nền tảng</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Quản lý Content</h1>
+                    <p className="text-muted-foreground mt-2">Quản lý nội dung đăng bài trên Telegram</p>
                 </div>
-                <Button onClick={() => setShowForm(!showForm)}>
+                <Button onClick={() => { resetForm(); setShowForm(!showForm); }}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Thêm lịch
+                    Thêm Content
                 </Button>
             </div>
 
             {showForm && (
                 <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold">Lên lịch bài viết mới</h2>
+                        <h2 className="text-xl font-bold">
+                            {editingIndex !== null ? 'Chỉnh sửa Content' : 'Thêm Content mới'}
+                        </h2>
                         <Button
                             type="button"
                             variant="outline"
@@ -287,8 +357,8 @@ export default function Scheduler() {
                         </div>
 
                         <div className="flex gap-2">
-                            <Button type="submit">Lưu</Button>
-                            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                            <Button type="submit">{editingIndex !== null ? 'Cập nhật' : 'Lưu'}</Button>
+                            <Button type="button" variant="outline" onClick={resetForm}>
                                 Hủy
                             </Button>
                         </div>
@@ -315,7 +385,7 @@ export default function Scheduler() {
                             {posts.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">
-                                        Chưa có bài viết nào được lên lịch. Nhấn "Thêm lịch" để bắt đầu.
+                                        Chưa có content nào. Nhấn "Thêm Content" để bắt đầu.
                                     </td>
                                 </tr>
                             ) : (
@@ -367,9 +437,36 @@ export default function Scheduler() {
                                             </Button>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <Button variant="ghost" size="sm">
-                                                <Trash2 className="h-4 w-4 text-red-600" />
-                                            </Button>
+                                            <div className="flex items-center gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleBroadcastNow(post, index)}
+                                                    disabled={broadcasting === index}
+                                                    title="Gửi ngay"
+                                                    className="hover:bg-green-50"
+                                                >
+                                                    <Rocket className="h-4 w-4 text-green-600" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleEdit(post, index)}
+                                                    title="Chỉnh sửa"
+                                                    className="hover:bg-amber-50"
+                                                >
+                                                    <Edit className="h-4 w-4 text-amber-600" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(index)}
+                                                    title="Xóa"
+                                                    className="hover:bg-red-50"
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

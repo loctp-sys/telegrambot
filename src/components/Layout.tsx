@@ -11,8 +11,8 @@ interface LayoutProps {
 
 const menuItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/offers', label: 'Kho vay', icon: Package },
-    { path: '/scheduler', label: 'Lên lịch', icon: Calendar },
+    { path: '/offers', label: 'Offers', icon: Package },
+    { path: '/content', label: 'Content', icon: Calendar },
     { path: '/config', label: 'Cấu hình', icon: Settings },
 ];
 

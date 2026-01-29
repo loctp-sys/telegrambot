@@ -323,3 +323,66 @@ export const addScheduledPost = async (sheetName: string, post: ScheduledPost): 
         throw error;
     }
 };
+
+/**
+ * Update an existing scheduled post in AUTO_POST sheet
+ */
+export const updateScheduledPost = async (
+    sheetName: string,
+    rowIndex: number,
+    post: ScheduledPost
+): Promise<void> => {
+    try {
+        // rowIndex is 0-based from data array, but sheet rows are 1-based + 1 for header
+        const sheetRow = rowIndex + 2;
+
+        const updatedRow = [
+            post.date,
+            post.time,
+            post.content,
+            post.buttonLink,
+            post.imageLink,
+            post.status,
+            post.exactTime,
+        ];
+
+        await writeSheet(`${sheetName}!A${sheetRow}:G${sheetRow}`, [updatedRow]);
+    } catch (error) {
+        console.error('Error updating scheduled post:', error);
+        throw error;
+    }
+};
+
+/**
+ * Delete a scheduled post from AUTO_POST sheet
+ */
+export const deleteScheduledPost = async (sheetName: string, rowIndex: number): Promise<void> => {
+    try {
+        // rowIndex is 0-based from data array, but sheet rows are 1-based + 1 for header
+        const sheetRow = rowIndex + 2;
+
+        const request = {
+            spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
+            resource: {
+                requests: [
+                    {
+                        deleteDimension: {
+                            range: {
+                                sheetId: 0, // You may need to get the actual sheet ID
+                                dimension: 'ROWS',
+                                startIndex: sheetRow - 1,
+                                endIndex: sheetRow,
+                            },
+                        },
+                    },
+                ],
+            },
+        };
+
+        await (window as any).gapi.client.sheets.spreadsheets.batchUpdate(request);
+    } catch (error) {
+        console.error('Error deleting scheduled post:', error);
+        throw error;
+    }
+};
+
