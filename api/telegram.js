@@ -1,3 +1,4 @@
+
 export default async function handler(req, res) {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -20,35 +21,46 @@ export default async function handler(req, res) {
     }
 
     const { botToken, body, method = 'sendMessage' } = req.body;
-
-    // Use token from body or environment variable
     const token = botToken || process.env.VITE_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 
     if (!token) {
-        res.status(500).json({ error: 'Telegram Bot Token is missing configuration' });
+        res.status(500).json({ error: 'Telegram Bot Token configuration missing' });
         return;
     }
 
     try {
         const url = `https://api.telegram.org/bot${token}/${method}`;
+        let requestOptions = { method: 'POST', headers: {} };
 
-        // Prepare request options
-        let requestOptions = {
-            method: 'POST',
-            headers: {},
-        };
-
-        // Check if photo is a Base64 string (data URI)
-        // Telegram requires multipart/form-data for file uploads
+        // Handle Base64 Image (data:image/...)
         if (body.photo && typeof body.photo === 'string' && body.photo.startsWith('data:')) {
             try {
-                // Construct FormData for multipart upload
-                const formData = new FormData();
+                // Manually parse Base64 to Buffer
+                // Format: "data:image/png;base64,iVBORw0KGgo..."
+                const matches = body.photo.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
 
-                // Add all other fields
+                if (!matches || matches.length !== 3) {
+                    throw new Error('Invalid Base64 string');
+                }
+
+                const mimeType = matches[1];
+                const buffer = Buffer.from(matches[2], 'base64');
+                const filename = 'image.' + (mimeType.split('/')[1] || 'jpg');
+
+                // Create FormData
+                // Note: In Vercel Node.js environment, we might need 'form-data' package or polyfills
+                // But modern Node.js has native FormData (Node 18+). 
+                // If native FormData doesn't support Buffer directly in all environments, we need to be careful.
+                // However, let's try standard Blob approach using the Buffer.
+
+                const formData = new FormData();
+                const blob = new Blob([buffer], { type: mimeType });
+
+                formData.append('photo', blob, filename);
+
+                // Add other fields
                 for (const key in body) {
                     if (key !== 'photo') {
-                        // Handle complex objects (like reply_markup) by stringifying them
                         if (typeof body[key] === 'object') {
                             formData.append(key, JSON.stringify(body[key]));
                         } else {
@@ -57,25 +69,15 @@ export default async function handler(req, res) {
                     }
                 }
 
-                // Process Base64 Image
-                // Fetch the data URI to get a Blob (Node 18+ supports this)
-                const imageResponse = await fetch(body.photo);
-                const blob = await imageResponse.blob();
-
-                // Append photo with filename
-                formData.append('photo', blob, 'image.jpg');
-
                 requestOptions.body = formData;
-                // Note: Do NOT set Content-Type header manually for FormData, 
-                // fetch will set it with the correct boundary
             } catch (err) {
-                console.error('Error processing Base64 image:', err);
-                // Fallback to sending as JSON if blob conversion fails (likely to fail at Telegram end but worth a try)
+                console.error('Error processing Base64:', err);
+                // Fallback to sending as JSON (will likely fail for Data URI)
                 requestOptions.headers['Content-Type'] = 'application/json';
                 requestOptions.body = JSON.stringify(body);
             }
         } else {
-            // Standard JSON request (for text messages or URL-based photos)
+            // Standard JSON request (text or URL)
             requestOptions.headers['Content-Type'] = 'application/json';
             requestOptions.body = JSON.stringify(body);
         }
