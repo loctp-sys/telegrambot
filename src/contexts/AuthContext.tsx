@@ -62,8 +62,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 } else {
                     setState(prev => ({ ...prev, isLoading: false }));
                 }
-            } catch (error) {
-                console.error('Error initializing auth:', error);
+            } catch (error: any) {
+                console.error('❌ Critical error during auth initialization:', error);
+
+                // Detailed error for debugging in console
+                if (error?.message) console.error('Error Message:', error.message);
+                if (error?.stack) console.error('Stack Trace:', error.stack);
+
                 setState(prev => ({ ...prev, isLoading: false }));
             }
         };

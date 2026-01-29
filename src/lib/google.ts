@@ -53,14 +53,25 @@ export const initGoogleAPI = (): Promise<void> => {
         script.onload = () => {
             (window as any).gapi.load('client', async () => {
                 try {
+                    console.log('🔌 Initializing gapi client...');
                     await (window as any).gapi.client.init({
                         apiKey: GOOGLE_CONFIG.apiKey,
                         discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
                     });
+
+                    if (!(window as any).gapi.client.sheets) {
+                        console.error('❌ Google Sheets API discovery failed. Discovery Docs:', GOOGLE_CONFIG.discoveryDocs);
+                        throw new Error('Google Sheets API not loaded. Check Discovery Docs.');
+                    }
+
+                    console.log('✅ Google APIs initialized successfully');
                     gapiInited = true;
                     resolve();
-                } catch (error) {
-                    reject(error);
+                } catch (error: any) {
+                    console.error('❌ gapi.client.init error:', error);
+                    // Provide more detailed error if available
+                    const details = error?.result?.error?.message || error?.message || JSON.stringify(error);
+                    reject(new Error(`GAPI Init Failed: ${details}`));
                 }
             });
         };
@@ -145,13 +156,21 @@ export const isSignedIn = (): boolean => {
  */
 export const readSheet = async (range: string): Promise<any[][]> => {
     try {
+        if (!(window as any).gapi?.client?.sheets) {
+            console.error('❌ Sheets API not available. Re-initializing...');
+            await initGoogleAPI();
+            if (!(window as any).gapi?.client?.sheets) {
+                throw new Error('Google Sheets API is not initialized or available.');
+            }
+        }
+
         const response = await (window as any).gapi.client.sheets.spreadsheets.values.get({
             spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
             range: range,
         });
         return response.result.values || [];
-    } catch (error) {
-        console.error('Error reading sheet:', error);
+    } catch (error: any) {
+        console.error(`Error reading sheet (${range}):`, error);
         throw error;
     }
 };
@@ -161,14 +180,18 @@ export const readSheet = async (range: string): Promise<any[][]> => {
  */
 export const writeSheet = async (range: string, values: any[][]): Promise<void> => {
     try {
+        if (!(window as any).gapi?.client?.sheets) {
+            await initGoogleAPI();
+        }
+
         await (window as any).gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
             range: range,
             valueInputOption: 'USER_ENTERED',
             resource: { values },
         });
-    } catch (error) {
-        console.error('Error writing to sheet:', error);
+    } catch (error: any) {
+        console.error(`Error writing to sheet (${range}):`, error);
         throw error;
     }
 };
@@ -178,6 +201,10 @@ export const writeSheet = async (range: string, values: any[][]): Promise<void> 
  */
 export const appendSheet = async (range: string, values: any[][]): Promise<void> => {
     try {
+        if (!(window as any).gapi?.client?.sheets) {
+            await initGoogleAPI();
+        }
+
         await (window as any).gapi.client.sheets.spreadsheets.values.append({
             spreadsheetId: GOOGLE_CONFIG.spreadsheetId,
             range: range,
@@ -185,8 +212,8 @@ export const appendSheet = async (range: string, values: any[][]): Promise<void>
             insertDataOption: 'INSERT_ROWS',
             resource: { values },
         });
-    } catch (error) {
-        console.error('Error appending to sheet:', error);
+    } catch (error: any) {
+        console.error(`Error appending to sheet (${range}):`, error);
         throw error;
     }
 };
