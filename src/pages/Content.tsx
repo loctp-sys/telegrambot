@@ -3,7 +3,7 @@ import { readScheduleData, addScheduledPost, updateScheduledPost, deleteSchedule
 import { notifyScheduledPost, sendTestMessage } from '@/lib/telegram';
 import { SHEET_NAMES } from '@/config/constants';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, ExternalLink, Image, Eye, Edit, Rocket } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Image, Eye, Edit } from 'lucide-react';
 import TelegramPreviewModal from '@/components/TelegramPreviewModal';
 
 export default function Content() {
@@ -439,14 +439,14 @@ export default function Content() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <div className="flex items-center gap-1">
                                                 <Button
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() => handleBroadcastNow(post, index)}
                                                     disabled={broadcasting === index}
                                                     title="Gửi ngay"
-                                                    className="hover:bg-green-50"
+                                                    className="hover:bg-green-50 border-green-600 text-green-600 hover:text-green-700"
                                                 >
-                                                    <Rocket className="h-4 w-4 text-green-600" />
+                                                    {broadcasting === index ? 'Đang gửi...' : 'Gửi ngay'}
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
