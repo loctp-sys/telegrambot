@@ -107,6 +107,7 @@ export default function Content() {
             content: '',
             buttonLink: '',
             imageLink: '',
+            buttonText: '',
             status: 'Pending',
             exactTime: '',
         });
