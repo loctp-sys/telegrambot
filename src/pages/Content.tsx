@@ -34,7 +34,7 @@ export default function Content() {
         time: '',
         content: '',
         buttonLink: '',
-        buttonText: '',
+        buttonLabel: '',
         imageLink: '',
         status: 'Pending',
         exactTime: '',
@@ -57,8 +57,11 @@ export default function Content() {
     }, []);
 
     // Derived state: Unique used CTA labels + Presets
-    const uniqueUsedLabels = Array.from(new Set(posts.map(p => p.buttonText).filter(Boolean))) as string[];
+    const uniqueUsedLabels = Array.from(new Set(posts.map(p => p.buttonLabel).filter(Boolean))) as string[];
     const ctaSuggestions = Array.from(new Set([...CTA_PRESETS, ...uniqueUsedLabels]));
+
+    // Custom Combobox State
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
 
     const loadPosts = async () => {
@@ -115,7 +118,7 @@ export default function Content() {
             content: '',
             buttonLink: '',
             imageLink: '',
-            buttonText: '',
+            buttonLabel: '',
             status: 'Pending',
             exactTime: '',
         });
@@ -142,7 +145,7 @@ export default function Content() {
                 content: post.content,
                 imageLink: post.imageLink,
                 buttonLink: post.buttonLink,
-                buttonText: post.buttonText || DEFAULT_CTA,
+                buttonLabel: post.buttonLabel || DEFAULT_CTA,
             });
 
             if (success) {
@@ -165,7 +168,7 @@ export default function Content() {
     const handleEdit = (post: ScheduledPost, index: number) => {
         setFormData({
             ...post,
-            buttonText: post.buttonText || '',
+            buttonLabel: post.buttonLabel || '',
         });
         setEditingIndex(index);
         setShowForm(true);
@@ -349,21 +352,38 @@ export default function Content() {
                                 />
                             </div>
 
-                            <div>
+                            <div className="relative">
                                 <label className="block text-sm font-medium mb-2">Tên nút bấm (CTA)</label>
                                 <input
                                     type="text"
-                                    list="cta-suggestions"
-                                    value={formData.buttonText || ''}
-                                    onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
+                                    value={formData.buttonLabel || ''}
+                                    onChange={(e) => setFormData({ ...formData, buttonLabel: e.target.value })}
+                                    onFocus={() => setShowSuggestions(true)}
+                                    // Delay blur to allow click on suggestion
+                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                     placeholder="Chọn hoặc nhập tên nút..."
+                                    autoComplete="off"
                                 />
-                                <datalist id="cta-suggestions">
-                                    {ctaSuggestions.map((cta, index) => (
-                                        <option key={index} value={cta} />
-                                    ))}
-                                </datalist>
+                                {showSuggestions && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                                        <div className="p-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b">
+                                            Đã sử dụng gần đây
+                                        </div>
+                                        {ctaSuggestions.map((cta, index) => (
+                                            <div
+                                                key={index}
+                                                className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 transition-colors"
+                                                onClick={() => {
+                                                    setFormData({ ...formData, buttonLabel: cta });
+                                                    setShowSuggestions(false);
+                                                }}
+                                            >
+                                                {cta}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div>
@@ -580,6 +600,7 @@ export default function Content() {
                 content={previewPost?.content || ''}
                 imageLink={previewPost?.imageLink}
                 buttonLink={previewPost?.buttonLink}
+                buttonLabel={previewPost?.buttonLabel}
                 onSendTest={previewPost ? () => handleSendTest(previewPost) : undefined}
             />
         </div>

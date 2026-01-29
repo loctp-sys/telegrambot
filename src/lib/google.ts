@@ -19,7 +19,7 @@ export interface ScheduledPost {
     imageLink: string;    // Col E - Link_Anh
     status: string;       // Col F - Trang_Thai (Pending, Done)
     exactTime: string;    // Col G - Gio_Dang
-    buttonText?: string;  // Col H - Ten_Nut_Bam
+    buttonLabel?: string;  // Col H - Ten_Nut_Bam
 }
 
 export interface ConfigItem {

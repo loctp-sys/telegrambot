@@ -8,7 +8,7 @@ interface TelegramPreviewModalProps {
     content: string;
     imageLink?: string;
     buttonLink?: string;
-    buttonText?: string;
+    buttonLabel?: string;
     onSendTest?: () => Promise<void>;
 }
 
@@ -18,7 +18,7 @@ export default function TelegramPreviewModal({
     content,
     imageLink,
     buttonLink,
-    buttonText,
+    buttonLabel,
     onSendTest,
 }: TelegramPreviewModalProps) {
     const [sending, setSending] = useState(false);
@@ -126,7 +126,7 @@ export default function TelegramPreviewModal({
                                         rel="noopener noreferrer"
                                         className="block py-2 text-center text-blue-500 hover:bg-gray-50 transition-colors text-sm font-medium"
                                     >
-                                        {buttonText || '🔗 Mở liên kết'}
+                                        {buttonLabel || '🔗 Mở liên kết'}
                                     </a>
                                 </div>
                             )}
